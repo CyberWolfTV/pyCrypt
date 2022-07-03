@@ -1,92 +1,93 @@
 #!/usr/bin/python3
 
-from base64 import b64decode
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
-from Crypto.Random import get_random_bytes
 import os, sys, json, hashlib
+from base64 import b64encode
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Random import get_random_bytes
 
 # Which File/Directory?
 try:
     if(sys.argv[1] =='-h' or sys.argv[1] == '--help'):
-        print('\ndecrypt [Option] \n\nOptions:')
-        print('-h / --help        -> shows this')
-        print('DIRECTORY/FILENAME -> decrypts this file/directory')
+        print('\nencrypt [Option] \n\nOptions:')
+        print('-h / --help          -> shows this')
+        print('DIRECTORY / FILENAME -> encrypts this file/directory')
 
         print('\nHow it works:')
         print('This script will hash ur passwd with sha256.')
-        print('Then it will decrypt ur file with AES256, CBC mode.')
-        print('Directories wont be compressed, it will decrypt all the files\nit contains with a recursive loop.')
+        print('Then it will encrypt ur file with AES256, CBC mode.')
+        print('Directories wont be compressed, it will encrypt all the files\nit contains with a recursive loop.')
         print('The key will be the hashed passwd.')
-        print('The iv is stored, like the ciphertext, in json format \nin the file.')
-        print('U can use the file or the directory like u did before encrypting it.')
+        print('The iv will be stored, like the ciphertext, in json format \nin the file.')
+        print('U can decrypt the file or the directory with the command "decrypt".')
+        print('Warning: This script will NOT encrypt the file titles!\n')
         exit()
     else:
         Name = sys.argv[1]
 except Exception:
     Name = input('File or Directory: ')
 
+print('U are going to encrypt: ' + Name)
+
 # Key
 key = hashlib.sha256(input('Passwd: ').encode()).digest()
 
-def recDecryption(Name, Path, counter):
-
+def recEncryption(Name, Path, counter):
+    
     if(counter != 0):
-        recDecryption.counterxyz = counter
+        recEncryption.counterxyz = counter
     else:
-        recDecryption.counterxyz = 0
+        recEncryption.counterxyz = 0
 
     try:
         temppath = Path
         temptemppath = Path + '/' + Name
-
         TestIfDir = os.listdir(temptemppath)
-        print('\ndecrypting: ...')
+        print('\nencrypting: ...')
         print(os.listdir(temptemppath))
+        
 
         temppath = temppath + '/' + Name
         for i in range(0, len(os.listdir(temppath))):
-            recDecryption(os.listdir(temppath)[i], temppath, recDecryption.counterxyz)
+            recEncryption(os.listdir(temppath)[i], temppath, recEncryption.counterxyz) 
 
     except Exception:
         PathName = temppath + '/' + Name
-        
-        File = open(PathName, 'r')
-        json_input = File.read()
-        File.close()
-        
+        try:
+            File = open(PathName, 'r')
+            data = bytes(File.read().encode())
+            File.close()
+        except Exception:
+            File = open(PathName, 'rb')
+            data = File.read()
+            File.close()
+        except Exception as Error:
+            print('Error: \n' + Error)
+
         currpath = os.getcwd()
         
         if currpath in PathName:
             relPath = PathName.replace(currpath, '')
             print(relPath)
 
-        # Decryption
-        b64 = json.loads(json_input)
-        iv = b64decode(b64['iv'])
-        ct = b64decode(b64['ciphertext'])
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        pt = unpad(cipher.decrypt(ct), AES.block_size)
+        # Encryption
+        cipher = AES.new(key, AES.MODE_CBC)
+        ct_bytes = cipher.encrypt(pad(data, AES.block_size))
+        iv = b64encode(cipher.iv).decode('utf-8')
+        ct = b64encode(ct_bytes).decode('utf-8')
+        result = json.dumps({'iv':iv, 'ciphertext':ct})
 
         # Write encrypted stuff into the File
-        try:
-            File = open(PathName, 'w')
-            File.write(pt)
-            recDecryption.counterxyz = recDecryption.counterxyz + 1
-        except Exception:
-            File = open(PathName, 'wb')
-            File.write(pt)
-            recDecryption.counterxyz = recDecryption.counterxyz + 1
-        except Exception as Error:
-            print('Error: \n' + Error)
+        File = open(PathName, 'w')
+        File.write(result)
         File.close()
+        recEncryption.counterxyz = recEncryption.counterxyz + 1
 
-recDecryption(Name, os.getcwd(), 0)
+recEncryption(Name, os.getcwd(), 0)
 
-if(recDecryption.counterxyz == 1):
-    print('\nFile was successfully decrypted')
-if(recDecryption.counterxyz > 1):
-    print('\n' + "{}".format(recDecryption.counterxyz) + ' files are successfully decrypted')
-if(recDecryption.counterxyz == 0):
+if(recEncryption.counterxyz == 1):
+    print('\nFile was successfully encrypted')
+if(recEncryption.counterxyz > 1):
+    print('\n' + "{}".format(recEncryption.counterxyz) + ' files are successfully encrypted')
+if(recEncryption.counterxyz == 0):
     print('\nError occured')
-

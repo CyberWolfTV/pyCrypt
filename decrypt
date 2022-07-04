@@ -4,7 +4,7 @@ from base64 import b64decode
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from Crypto.Random import get_random_bytes
-import os, sys, json, hashlib
+import os, sys, json, hashlib, urllib.parse
 
 # Which File/Directory?
 try:
@@ -12,6 +12,7 @@ try:
         print('\ndecrypt [Option] \n\nOptions:')
         print('-h / --help        -> shows this')
         print('DIRECTORY/FILENAME -> decrypts this file/directory')
+        print('The script will automaticly detect wether the filename is \nencrypted or not')
 
         print('\nHow it works:')
         print('This script will hash ur passwd with sha256.')
@@ -30,7 +31,6 @@ except Exception:
 key = hashlib.sha256(input('Passwd: ').encode()).digest()
 
 def recDecryption(Name, Path, counter):
-
     if(counter != 0):
         recDecryption.counterxyz = counter
     else:
@@ -39,14 +39,14 @@ def recDecryption(Name, Path, counter):
     try:
         temppath = Path
         temptemppath = Path + '/' + Name
-
         TestIfDir = os.listdir(temptemppath)
         print('\ndecrypting: ...')
-        print(os.listdir(temptemppath))
-
+        print(TestIfDir)
         temppath = temppath + '/' + Name
-        for i in range(0, len(os.listdir(temppath))):
-            recDecryption(os.listdir(temppath)[i], temppath, recDecryption.counterxyz)
+        currlistdir = os.listdir(temppath)
+
+        for i in range(0, len(currlistdir)):
+            recDecryption(currlistdir[i], temppath, recDecryption.counterxyz)
 
     except Exception:
         PathName = temppath + '/' + Name
@@ -59,7 +59,7 @@ def recDecryption(Name, Path, counter):
         
         if currpath in PathName:
             relPath = PathName.replace(currpath, '')
-            print(relPath)
+            realrelPath = relPath[1:]
 
         # Decryption
         b64 = json.loads(json_input)
@@ -67,6 +67,16 @@ def recDecryption(Name, Path, counter):
         ct = b64decode(b64['ciphertext'])
         cipher = AES.new(key, AES.MODE_CBC, iv)
         pt = unpad(cipher.decrypt(ct), AES.block_size)
+
+        # decrypt Filename
+        plainName = None
+        try:
+            iv = b64decode(b64['NameIV'])
+            rawName = bytes(b64decode(urllib.parse.unquote(Name)))
+            newcipher = AES.new(key, AES.MODE_CBC, iv)
+            plainName = unpad(newcipher.decrypt(rawName), AES.block_size)
+        except Exception as error:
+            encryptedFileNames = 0
 
         # Write encrypted stuff into the File
         try:
@@ -80,6 +90,17 @@ def recDecryption(Name, Path, counter):
         except Exception as Error:
             print('Error: \n' + Error)
         File.close()
+
+        # change Filename
+        if(plainName != None):
+            if Name in realrelPath:
+                plainName = urllib.parse.quote(plainName, safe='')
+                plainPathName = realrelPath.replace(Name, plainName)
+            os.renames(PathName, plainPathName)
+            print(plainPathName)
+            plainPathName = None
+        elif(plainName == None):
+            print(realrelPath)
 
 recDecryption(Name, os.getcwd(), 0)
 

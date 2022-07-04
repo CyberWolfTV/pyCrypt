@@ -1,30 +1,40 @@
 #!/usr/bin/python3
 
-import os, sys, json, hashlib
+import os, sys, json, hashlib, urllib.parse
 from base64 import b64encode
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
 
 # Which File/Directory?
+fn = 0
+Name = None
 try:
-    if(sys.argv[1] =='-h' or sys.argv[1] == '--help'):
-        print('\nencrypt [Option] \n\nOptions:')
-        print('-h / --help          -> shows this')
-        print('DIRECTORY / FILENAME -> encrypts this file/directory')
+    for i in range(0, len(sys.argv) - 1):
+        i = i + 1
+        if(sys.argv[i] =='-h' or sys.argv[i] == '--help'):
+           print('\nencrypt [Option] \n\nOptions:')
+           print('-h / --help          -> shows this')
+           print('DIRECTORY / FILENAME -> encrypts this file/directory')
+           print('-fn / --filenames    -> encrypts filenames too')
 
-        print('\nHow it works:')
-        print('This script will hash ur passwd with sha256.')
-        print('Then it will encrypt ur file with AES256, CBC mode.')
-        print('Directories wont be compressed, it will encrypt all the files\nit contains with a recursive loop.')
-        print('The key will be the hashed passwd.')
-        print('The iv will be stored, like the ciphertext, in json format \nin the file.')
-        print('U can decrypt the file or the directory with the command "decrypt".')
-        print('Warning: This script will NOT encrypt the file titles!\n')
-        exit()
-    else:
-        Name = sys.argv[1]
-except Exception:
+           print('\nHow it works:')
+           print('This script will hash ur passwd with sha256.')
+           print('Then it will encrypt ur file with AES256, CBC mode.')
+           print('Directories wont be compressed, it will encrypt all the files\nit contains with a recursive loop.')
+           print('The key will be the hashed passwd.')
+           print('The iv will be stored, like the ciphertext, in json format \nin the file.')
+           print('U can decrypt the file or the directory with the command "decrypt".')
+           print('Warning: This script will NOT encrypt the names of the directories!\n')
+           exit()
+        if(sys.argv[i] == '-fn' or sys.argv[i] == '--filenames'):
+            fn = 1
+        else:
+            Name = sys.argv[i]
+except Exception as error:
+    print(error)
+
+if(Name == None):
     Name = input('File or Directory: ')
 
 print('U are going to encrypt: ' + Name)
@@ -33,25 +43,25 @@ print('U are going to encrypt: ' + Name)
 key = hashlib.sha256(input('Passwd: ').encode()).digest()
 
 def recEncryption(Name, Path, counter):
-    
     if(counter != 0):
         recEncryption.counterxyz = counter
     else:
         recEncryption.counterxyz = 0
-
+    
     try:
         temppath = Path
         temptemppath = Path + '/' + Name
         TestIfDir = os.listdir(temptemppath)
         print('\nencrypting: ...')
-        print(os.listdir(temptemppath))
-        
-
         temppath = temppath + '/' + Name
+        currlistdir = os.listdir(temppath)
+        print(currlistdir)
+        
         for i in range(0, len(os.listdir(temppath))):
-            recEncryption(os.listdir(temppath)[i], temppath, recEncryption.counterxyz) 
+            recEncryption(currlistdir[i], temppath, recEncryption.counterxyz) 
 
     except Exception:
+        # Read Files
         PathName = temppath + '/' + Name
         try:
             File = open(PathName, 'r')
@@ -68,19 +78,40 @@ def recEncryption(Name, Path, counter):
         
         if currpath in PathName:
             relPath = PathName.replace(currpath, '')
-            print(relPath)
+            realrelPath = relPath[1:]
+            print(realrelPath)
 
         # Encryption
         cipher = AES.new(key, AES.MODE_CBC)
         ct_bytes = cipher.encrypt(pad(data, AES.block_size))
         iv = b64encode(cipher.iv).decode('utf-8')
         ct = b64encode(ct_bytes).decode('utf-8')
-        result = json.dumps({'iv':iv, 'ciphertext':ct})
-
+        
+        # encrypt Filename
+        if(fn == 1):
+            newcipher = AES.new(key, AES.MODE_CBC)
+            data = bytes(Name.encode())
+            cn = newcipher.encrypt(pad(data, AES.block_size))
+            NameIV = b64encode(newcipher.iv).decode('utf-8')
+            cipherName = b64encode(cn).decode('utf-8')
+            result = json.dumps({'iv':iv, 'ciphertext':ct, 'NameIV':NameIV})
+        else:
+            result = json.dumps({'iv':iv, 'ciphertext':ct})
+        
         # Write encrypted stuff into the File
         File = open(PathName, 'w')
         File.write(result)
         File.close()
+        
+        
+        # change Filename
+        if(fn == 1):
+            if Name in realrelPath:
+                cipherName = urllib.parse.quote(cipherName, safe='')
+                cipherPathName = realrelPath.replace(Name, cipherName)
+            os.renames(PathName, cipherPathName)
+            cipherPathName = None
+        
         recEncryption.counterxyz = recEncryption.counterxyz + 1
 
 recEncryption(Name, os.getcwd(), 0)

@@ -25,11 +25,11 @@ decrypt -h
 
 What does it do?
 1. It en-/decrypts single files or all files in a directory of ur choice.
-2. Optional u can let it encrypt the filenames too.
+2. Optional u can let it encrypt the filenames and/or the directorynames too.
 3. It can used in the terminal of ur linux computer.
 4. -h / --help shows what u can do and how it works. 
 
 Disclaimer: 
 1. The developer is not liable for any damage. 
-2. Dont run the script with root privileges. 
+2. Dont run the script with root privileges.
 

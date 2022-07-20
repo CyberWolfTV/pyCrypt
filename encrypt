@@ -197,7 +197,8 @@ def EncryptDirnames(Name, Path, listOfDirs):
         
         EncryptDirnames.counter = EncryptDirnames.counter + 1
 
-
+recEncryption.counterxyz = 0
+EncryptDirnames.counter = 0
 # Functions get used
 recEncryption(Name, os.getcwd(), 0)
 if(dn == 1):

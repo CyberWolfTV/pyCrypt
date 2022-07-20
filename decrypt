@@ -133,7 +133,7 @@ def GetDirs(Name, Path, DirectoryList):
         except OSError:
             doSmth = None
     createListofDirs(Name, Path, DirectoryList)
-
+    
     GetDirs.counter = 0
 
     for i in range(-len(DirectoryList), 0):
@@ -172,13 +172,14 @@ def GetDirs(Name, Path, DirectoryList):
 
 # Functions get used
 error = 0
-try:
-    GetDirs(Name, os.getcwd(), DirectoryList = [])
-except Exception:
+if(GetDirs(Name, os.getcwd(), DirectoryList = [])):
+    error = 0
+else:
     recDecryption(Name, os.getcwd(), 0)
     error = 'Directorynames are not encrypted!'
 if(error == 0):
     recDecryption(GetDirs.Name, os.getcwd(), 0)
+
 
 # just some ouputs for the user
 if(GetDirs.counter == 0 and recDecryption.counterxyz == 0):

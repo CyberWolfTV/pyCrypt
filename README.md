@@ -1,3 +1,6 @@
+#INFO
+This project has a bug rn, so wait till this msgs dissappeared till download
+
 # pyCrypt
 pyCrypt is a linux command line tool for encrypting and decrypting single files or whole directories recursively.
 

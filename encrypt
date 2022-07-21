@@ -135,8 +135,8 @@ def recEncryption(Name, Path, counter):
         if(fn == 1):
             if Name in realrelPath:
                 cipherName = urllib.parse.quote(cipherName, safe='')
-                cipherPathName = realrelPath.replace(Name, cipherName)
-            os.renames(PathName, cipherPathName)
+                cipherPathName = "".join(reversed(realrelPath)).replace("".join(reversed(Name)), "".join(reversed(cipherName)))
+            os.renames(PathName, "".join(reversed(cipherPathName)))
             cipherPathName = None
         
         recEncryption.counterxyz = recEncryption.counterxyz + 1
@@ -153,10 +153,12 @@ def EncryptDirnames(Name, Path, listOfDirs):
                 temptemppathWithoutName = temptemppath.replace(Name, '')
             directory = [Name, temptemppath, temptemppathWithoutName]
             listOfDirs.append(directory)
+            print(temptemppath)
             for i in range(0, len(TestIfDir)):
                 createListofDirs(TestIfDir[i], temptemppath, listOfDirs)
+            temptemppath = None
         except Exception:
-            doSmth = None
+            temptemppath = None
         return listOfDirs
     createListofDirs(Name, Path, listOfDirs)
 
@@ -191,10 +193,11 @@ def EncryptDirnames(Name, Path, listOfDirs):
         
         encData = json.dumps({'iv':NameIV, 'ciphertext':cipherName, 'type':type})
         DirNameFile.write(encData)
-        newDirName = Directory[1].replace(Directory[0], cipherName)
+        revdir1 = "".join(reversed(Directory[1]))
+        newDirName = revdir1.replace("".join(reversed(Directory[0])), "".join(reversed(cipherName)), 1)
+        newDirName = "".join(reversed(newDirName))
 
         os.rename(Directory[1], newDirName)
-        
         EncryptDirnames.counter = EncryptDirnames.counter + 1
 
 recEncryption.counterxyz = 0

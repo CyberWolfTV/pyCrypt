@@ -47,7 +47,6 @@ def recDecryption(Name, Path, counter):
 
         for i in range(0, len(currlistdir)):
             recDecryption(currlistdir[i], temppath, recDecryption.counterxyz)
-
     except Exception:
         PathName = temppath + '/' + Name
 
@@ -73,6 +72,8 @@ def recDecryption(Name, Path, counter):
                 raise Exception
             elif(type == 'Directory'):
                 print('Decryption of the directories failed or failed to remove the dirname files.')
+                print('maybe they have been encrypted multiple times.')
+                raise Exception
             else:
                 print('Error Line 77: type = ' + type)
                 raise Exception
@@ -130,12 +131,12 @@ def GetDirs(Name, Path, DirectoryList):
             DirectoryList.append(directory)
             for i in range(0, len(TestIfDir)):
                 createListofDirs(TestIfDir[i], temptemppath, DirectoryList)
+            # temptemppath = None
         except OSError:
             doSmth = None
     createListofDirs(Name, Path, DirectoryList)
     
     GetDirs.counter = 0
-
     for i in range(-len(DirectoryList), 0):
         
         customI = -i -1
@@ -157,7 +158,7 @@ def GetDirs(Name, Path, DirectoryList):
         
         OldNamePath = '/' + Directory[1]
         Name = Directory[0]
-        plainName = urllib.parse.quote(plainName, safe='')
+        plainName = plainName.decode('UTF-8')
         
         if Name in OldNamePath:
             NewNamePath =  OldNamePath.replace(Name, '') + plainName
@@ -169,17 +170,19 @@ def GetDirs(Name, Path, DirectoryList):
         GetDirs.counter = GetDirs.counter + 1
         GetDirs.Name = plainName
 
+GetDirs.counter = 0
+recDecryption.counterxyz = 0
 
 # Functions get used
 error = 0
-if(GetDirs(Name, os.getcwd(), DirectoryList = [])):
-    error = 0
-else:
+try:
+    testifdir = os.listdir(Name)
+    GetDirs(Name, os.getcwd(), DirectoryList = [])
+except Exception:
     recDecryption(Name, os.getcwd(), 0)
     error = 'Directorynames are not encrypted!'
 if(error == 0):
     recDecryption(GetDirs.Name, os.getcwd(), 0)
-
 
 # just some ouputs for the user
 if(GetDirs.counter == 0 and recDecryption.counterxyz == 0):

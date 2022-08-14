@@ -11,6 +11,18 @@ from Crypto.Random import get_random_bytes
 dn = None
 fn = None
 Name = None
+
+def ask(question, default_lower, default_upper):
+    input1 = input(question)
+    if(input1 == None):
+        input1 = default_lower
+    elif(input1 == 'n' or input1 == 'N' or input1 == ''):
+        return 0
+    elif(input1 == 'y' or input1 == 'Y'):
+        return 1
+    else:
+        ask(question, default_lower, default_upper)
+
 try:
     for i in range(0, len(sys.argv) - 1):
         i = i + 1
@@ -41,25 +53,9 @@ except Exception as error:
 if(Name == None):
     Name = input('File or Directory: ')
 if(fn == None):
-    def ask1():
-        askfn = input('Encrypt filenames? [y/N]')
-        if(askfn == None or askfn == 'n' or askfn == 'N' or askfn == ''):
-            return 0
-        elif(askfn == 'y' or askfn == 'Y'):
-            return 1
-        else:
-            ask1()
-    fn =ask1()
+    fn = ask('Encrypt filenames? [y/N] ', 'n', 'N')
 if(dn == None):
-    def ask2():
-        askdn = input('Encrypt directorynames? [y/N]')
-        if(askdn == None or askdn == 'n' or askdn == 'N' or askdn == ''):
-            return 0
-        elif(askdn == 'y' or askdn == 'Y'):
-            return 1
-        else:
-            ask2()
-    dn = ask2()
+    dn = ask('Encrypt directorynames? [y/N] ', 'n', 'N')
     
 
 print('U are going to encrypt: ' + Name)

@@ -2,12 +2,15 @@
 pyCrypt is a linux command line tool for encrypting and decrypting single files or whole directories recursively.
 
 Installation:
-1. Install Python3
+1. Install Python3 & git
 2. Install PyCryptodome
 ```sh
 pip install pycryptodome
 ```
 3. Download the two files of this repository: encrypt & decrypt
+```sh
+git clone https://github.com/CyberWolfTV/pyCrypt.git
+```
 4. Move these files to ur /bin directory to use them in ur shell
 ```sh
 cd pyCrypt

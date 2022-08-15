@@ -11,6 +11,7 @@ from Crypto.Random import get_random_bytes
 dn = None
 fn = None
 Name = None
+nq = None
 
 def ask(question, default_lower, default_upper):
     input1 = input(question)
@@ -32,6 +33,7 @@ try:
            print('DIRECTORY / FILENAME   -> encrypts this file/directory')
            print('-fn / --filenames      -> encrypts filenames too')
            print('-dn / --directorynames -> encrypts directorynames too')
+           print('-nq / --no-questions   -> does not ask any questions')
 
            print('\nHow it works:')
            print('This script will hash ur passwd with sha256.')
@@ -45,6 +47,8 @@ try:
             fn = 1
         elif(sys.argv[i] == '-dn' or sys.argv[i] == '--directorynames'):
             dn = 1
+        elif(sys.argv[i] == '-nq' or sys.argv[i] == '--no-questions'):
+            nq = 1
         else:
             Name = sys.argv[i]
 except Exception as error:
@@ -52,9 +56,9 @@ except Exception as error:
 
 if(Name == None):
     Name = input('File or Directory: ')
-if(fn == None):
+if(fn == None and nq == None):
     fn = ask('Encrypt filenames? [y/N] ', 'n', 'N')
-if(dn == None):
+if(dn == None and nq == None):
     dn = ask('Encrypt directorynames? [y/N] ', 'n', 'N')
     
 

@@ -15,9 +15,9 @@ nq = None
 
 def ask(question, default_lower, default_upper):
     input1 = input(question)
-    if(input1 == None):
+    if(input1 == '' or input1 == None):
         input1 = default_lower
-    elif(input1 == 'n' or input1 == 'N'):
+    if(input1 == 'n' or input1 == 'N'):
         return 0
     elif(input1 == 'y' or input1 == 'Y'):
         return 1

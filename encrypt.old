@@ -1,0 +1,225 @@
+#!/usr/bin/python3
+
+import os, sys, json, hashlib, urllib.parse
+from base64 import b64decode, b64encode
+#from xml.etree.ElementTree import tostring
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Random import get_random_bytes
+
+# Which File/Directory?
+dn = None
+fn = None
+Name = None
+nq = None
+
+def ask(question, default_lower, default_upper):
+    input1 = input(question)
+    if(input1 == '' or input1 == None):
+        input1 = default_lower
+    if(input1 == 'n' or input1 == 'N'):
+        return 0
+    elif(input1 == 'y' or input1 == 'Y'):
+        return 1
+    else:
+        ask(question, default_lower, default_upper)
+
+try:
+    for i in range(0, len(sys.argv) - 1):
+        i = i + 1
+        if(sys.argv[i] =='-h' or sys.argv[i] == '--help'):
+           print('\nencrypt [Option] \n\nOptions:')
+           print('-h / --help            -> shows this')
+           print('DIRECTORY / FILENAME   -> encrypts this file/directory')
+           print('-fn / --filenames      -> encrypts filenames too')
+           print('-dn / --directorynames -> encrypts directorynames too')
+           print('-nq / --no-questions   -> does not ask any questions')
+
+           print('\nHow it works:')
+           print('This script will hash ur passwd with sha256.')
+           print('Then it will encrypt ur file with AES256, CBC mode.')
+           print('Directories wont be compressed, it will encrypt all the files\nit contains with a recursive loop.')
+           print('The key will be the hashed passwd.')
+           print('The iv will be stored, like the ciphertext, in json format \nin the file.')
+           print('U can decrypt the file or the directory with the command "decrypt".')
+           exit()
+        elif(sys.argv[i] == '-fn' or sys.argv[i] == '--filenames'):
+            fn = 1
+        elif(sys.argv[i] == '-dn' or sys.argv[i] == '--directorynames'):
+            dn = 1
+        elif(sys.argv[i] == '-nq' or sys.argv[i] == '--no-questions'):
+            nq = 1
+        else:
+            Name = sys.argv[i]
+except Exception as error:
+    print(error)
+
+if(Name == None):
+    Name = input('File or Directory: ')
+if(fn == None and nq == None):
+    fn = ask('Encrypt filenames? [y/N] ', 'n', 'N')
+if(dn == None and nq == None):
+    dn = ask('Encrypt directorynames? [y/N] ', 'n', 'N')
+    
+
+print('U are going to encrypt: ' + Name)
+
+# Key
+key = hashlib.sha256(input('Passwd: ').encode()).digest()
+
+def recEncryption(Name, Path, counter):
+    if(counter != 0):
+        recEncryption.counterxyz = counter
+    else:
+        recEncryption.counterxyz = 0
+    
+    try:
+        temppath = Path
+        temptemppath = Path + '/' + Name
+        TestIfDir = os.listdir(temptemppath)
+        print('\nencrypting: ...')
+        temppath = temppath + '/' + Name
+        currlistdir = os.listdir(temppath)
+        print(currlistdir)
+        
+        for i in range(0, len(os.listdir(temppath))):
+            recEncryption(currlistdir[i], temppath, recEncryption.counterxyz) 
+
+    except Exception:
+        # Read Files
+        PathName = temppath + '/' + Name
+        try:
+            File = open(PathName, 'r')
+            data = bytes(File.read().encode())
+            File.close()
+        except Exception:
+            File = open(PathName, 'rb')
+            data = File.read()
+            File.close()
+        except Exception as Error:
+            print('Error: \n' + Error)
+
+        currpath = os.getcwd()
+        
+        if currpath in PathName:
+            relPath = PathName.replace(currpath, '')
+            realrelPath = relPath[1:]
+            print(realrelPath)
+
+        # Encryption
+        cipher = AES.new(key, AES.MODE_CBC)
+        ct_bytes = cipher.encrypt(pad(data, AES.block_size))
+        iv = b64encode(cipher.iv).decode('utf-8')
+        ct = b64encode(ct_bytes).decode('utf-8')
+        
+        type = 'File'
+
+        # encrypt Filename
+        if(fn == 1):
+            newcipher = AES.new(key, AES.MODE_CBC)
+            data = bytes(Name.encode())
+            cn = newcipher.encrypt(pad(data, AES.block_size))
+            NameIV = b64encode(newcipher.iv).decode('utf-8')
+            cipherName = b64encode(cn).decode('utf-8')
+            result = json.dumps({'iv':iv, 'ciphertext':ct, 'NameIV':NameIV, 'type':type})
+        else:
+            result = json.dumps({'iv':iv, 'ciphertext':ct, 'type':type})
+        
+        # Write encrypted stuff into the File
+        File = open(PathName, 'w')
+        File.write(result)
+        File.close()
+        
+        
+        # change Filename
+        if(fn == 1):
+            if Name in realrelPath:
+                cipherName = urllib.parse.quote(cipherName, safe='')
+                cipherPathName = "".join(reversed(realrelPath)).replace("".join(reversed(Name)), "".join(reversed(cipherName)))
+            os.renames(PathName, "".join(reversed(cipherPathName)))
+            cipherPathName = None
+        
+        recEncryption.counterxyz = recEncryption.counterxyz + 1
+
+
+# Encrypt directorynames:
+def EncryptDirnames(Name, Path, listOfDirs):
+    def createListofDirs(Name, Path, listOfDirs):
+        listOfDirs = listOfDirs
+        temptemppath = Path + '/' + Name
+        try:
+            TestIfDir = os.listdir(temptemppath)
+            if Name in temptemppath:
+                temptemppathWithoutName = temptemppath.replace(Name, '')
+            directory = [Name, temptemppath, temptemppathWithoutName]
+            listOfDirs.append(directory)
+            print(temptemppath)
+            for i in range(0, len(TestIfDir)):
+                createListofDirs(TestIfDir[i], temptemppath, listOfDirs)
+            temptemppath = None
+        except Exception:
+            temptemppath = None
+        return listOfDirs
+    createListofDirs(Name, Path, listOfDirs)
+
+    type = 'Directory'
+    print('\n')
+
+    EncryptDirnames.counter = 0
+
+    for i in range(-len(listOfDirs), 0):
+        
+        customI = -i -1
+        Directory = listOfDirs[customI]
+
+        print('Encrypting directorynames ... ' + "{}".format(customI) + ' left')
+
+        # Encryption process
+        newcipher = AES.new(key, AES.MODE_CBC)
+        data = bytes(Directory[0].encode())
+        cn = newcipher.encrypt(pad(data, AES.block_size))
+        NameIV = b64encode(newcipher.iv).decode('utf-8')
+        cipherName = b64encode(cn).decode('utf-8')
+
+        cipherName = urllib.parse.quote(cipherName, safe='')
+        cipherPathName = Directory[1] + '/' + cipherName
+
+        try:
+            DirNameFile = open(cipherPathName, 'x')
+            DirNameFile.close()
+            DirNameFile = open(cipherPathName, 'w')
+        except Exception as error:
+            print(error)
+        
+        encData = json.dumps({'iv':NameIV, 'ciphertext':cipherName, 'type':type})
+        DirNameFile.write(encData)
+        revdir1 = "".join(reversed(Directory[1]))
+        newDirName = revdir1.replace("".join(reversed(Directory[0])), "".join(reversed(cipherName)), 1)
+        newDirName = "".join(reversed(newDirName))
+
+        os.rename(Directory[1], newDirName)
+        EncryptDirnames.counter = EncryptDirnames.counter + 1
+
+recEncryption.counterxyz = 0
+EncryptDirnames.counter = 0
+# Functions get used
+recEncryption(Name, os.getcwd(), 0)
+if(dn == 1):
+    EncryptDirnames(Name, os.getcwd(), listOfDirs = [])
+
+# just some ouputs for the user
+if(EncryptDirnames.counter == 0 and recEncryption.counterxyz == 0):
+    print('\n0 files and directories encrypted.')
+    print('Are u sure the file / directory u tried to encrypt exists?')
+elif(EncryptDirnames.counter == 1 and recEncryption.counterxyz == 0):
+    print('\n' '1 directory is successfully encrypted')
+elif(EncryptDirnames.counter == 0 and recEncryption.counterxyz == 1):
+    print('\n' '1 file is successfully encrypted')
+elif(EncryptDirnames.counter == 1 and recEncryption.counterxyz == 1):
+    print('\n' '1 file and 1 directory are successfully encrypted')
+elif(EncryptDirnames.counter > 1 and recEncryption.counterxyz == 0):
+    print('\n' + "{}".format(EncryptDirnames.counter) +  ' directories are successfully encrypted')
+elif(EncryptDirnames.counter == 0 and recEncryption.counterxyz > 1):
+    print('\n' + "{}".format(recEncryption.counterxyz) + ' files are successfully encrypted')
+else:
+    print('\n' + "{}".format(recEncryption.counterxyz) + ' files and ' + "{}".format(EncryptDirnames.counter) +  ' directories are successfully encrypted')

@@ -107,17 +107,13 @@ def encrypt_file(name, path):
     file.close()
 
     if(encrypt_file_name):
-        print(name)
-        print(path)
         # subsitude name with random string
         # 1. make sure it does only replace the name, not other dirs
         random_name = "".join(random.choice(string.ascii_letters) for x in range(20))
         reversed_path = "".join(reversed(path))
-        print(reversed_path)
         reversed_name = "".join(reversed(path))
         new_reversed_path = reversed_path.replace(reversed_name, random_name, 1)
         new_path = "".join(reversed(new_reversed_path))
-        print(new_path)
 
         os.rename(path, new_path)
 

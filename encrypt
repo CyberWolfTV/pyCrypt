@@ -13,6 +13,8 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
 
+
+global dir_list, file_counter, encrypt_dir_name, encrypt_file_name
 # Options
 # Which File/Directory?
 Name = None
@@ -29,11 +31,11 @@ def ask(question, default):
     if(input1 == '' or input1 == None):
         input1 = default
     if(input1 == 'n' or input1 == 'N'):
-        return 0
+        return False
     elif(input1 == 'y' or input1 == 'Y'):
-        return 1
+        return True
     else:
-        ask(question, default)
+        return ask(question, default)
 
 
 for i in range(0, len(sys.argv) - 1):
@@ -55,20 +57,20 @@ for i in range(0, len(sys.argv) - 1):
         print('U can decrypt the file or the directory with the command "decrypt".')
         exit()
     elif(sys.argv[i] == '-fn' or sys.argv[i] == '--filenames'):
-        fn = 1
+        encrypt_file_name = True
     elif(sys.argv[i] == '-dn' or sys.argv[i] == '--directorynames'):
-        dn = 1
+        encrypt_dir_name = True
     elif(sys.argv[i] == '-nq' or sys.argv[i] == '--no-questions'):
-        nq = 1
+        no_questions = True
     else:
         Name = sys.argv[i]
 
 if(Name == None):
     Name = input('File or Directory: ')
 if(encrypt_file_name == None and no_questions == None):
-    file_name = ask('Encrypt filenames? [y/N] ', 'n', 'N')
+    encrypt_file_name = ask('Encrypt filenames? [y/N] ', 'n')
 if(encrypt_dir_name == None and no_questions == None):
-    dir_name = ask('Encrypt directorynames? [y/N] ', 'n', 'N')
+    encrypt_dir_name = ask('Encrypt directorynames? [y/N] ', 'n')
 
 print('U are going to encrypt: ' + Name)
 
@@ -83,28 +85,47 @@ def encrypt(msg):
 
 def encrypt_file(name, path):
     try:
-        File = open(path, 'r')
-        msg = bytes(File.read().encode())
-        File.close()
+        file = open(path, 'r')
+        msg = bytes(file.read().encode())
+        file.close()
     except Exception:
-        File = open(path, 'rb')
-        msg = File.read()
-        File.close()
-    except Exception as Error:
-        print('Error: \n' + Error)
+        file = open(path, 'rb')
+        msg = file.read()
+        file.close()
     
     content = encrypt(msg)
 
     if(encrypt_file_name):
-        file_name = encrypt(name)
+        file_name = encrypt(bytes(name.encode()))
         result = json.dumps({'iv':content[0], 'ciphertext':content[1], 'NameIV':file_name[0], 'NameCiphertext':file_name[1], 'type':"file"})
     else:
         result = json.dumps({'iv':content[0], 'ciphertext':content[1], 'type':"file"})
 
-    return result
+    # Write encrypted stuff into the File
+    file = open(path, 'w')
+    file.write(result)
+    file.close()
+
+    if(encrypt_file_name):
+        print(name)
+        print(path)
+        # subsitude name with random string
+        # 1. make sure it does only replace the name, not other dirs
+        random_name = "".join(random.choice(string.ascii_letters) for x in range(20))
+        reversed_path = "".join(reversed(path))
+        print(reversed_path)
+        reversed_name = "".join(reversed(path))
+        new_reversed_path = reversed_path.replace(reversed_name, random_name, 1)
+        new_path = "".join(reversed(new_reversed_path))
+        print(new_path)
+
+        os.rename(path, new_path)
+
+    return
 
 def recursive_encryption(name, path):
-    path = path + "/" + name
+    global file_counter, dir_list
+    path = str(path) + str("/") + str(name)
     if(os.path.isfile(path)):
         file_counter += 1
         encrypt_file(name, path)
@@ -120,17 +141,12 @@ def directory_encryption():
     # why not from 0 to len(...)
     # -> start with the deepest paths
     #    otherwise paths will change
-    for i in range(-(len(dir_list)+1), 0):
-        real_i = -i
+    for i in range(-(len(dir_list)), 0):
+        real_i = -i - 1
 
         print('Encrypting directorynames ... ' + "{}".format(real_i+1) + ' left')
 
-        # Encryption process
-        newcipher = AES.new(key, AES.MODE_CBC)
-        data = bytes(dir_list[real_i][0].encode())
-        cn = newcipher.encrypt(pad(data, AES.block_size))
-        name_iv = b64encode(newcipher.iv).decode('utf-8')
-        cipher_name = b64encode(cn).decode('utf-8')
+        data = encrypt(bytes(dir_list[real_i][0].encode()))
 
         # subsitude name with random string
         # 1. make sure it does only replace the name, not other dirs
@@ -143,20 +159,20 @@ def directory_encryption():
         # save the encrypted name
         filename = dir_list[real_i][1] + "/" + random_name
         try:
-            dir_name_file = open(file_name, 'x')
+            dir_name_file = open(filename, 'x')
             dir_name_file.close()
-            dir_name_file = open(file_name, 'w')
+            dir_name_file = open(filename, 'w')
         except Exception as error:
             print(error)
-        encrypted_dir_name = json.dumps({'iv':name_iv, 'ciphertext':cipher_name, 'type':"directory"})
-        dir_name_file.write(encrypt_dir_name)
+        encrypted_dir_name = json.dumps({'iv':data[0], 'ciphertext':data[1], 'type':"directory"})
+        dir_name_file.write(encrypted_dir_name)
 
         # rename directory
         os.rename(dir_list[real_i][1], new_path)
     return
 
 # call the encrypt functions
-recursive_encryption(Name, os.getcwd)
+recursive_encryption(Name, os.getcwd())
 
 if(encrypt_dir_name):
     directory_encryption()

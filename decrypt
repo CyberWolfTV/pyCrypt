@@ -12,7 +12,8 @@ dir_list = []
 Name = None
 file_counter = 0
 
-for i in range(0, len(sys.argv) - 1):
+for i in range(0, len(sys.argv)-1):
+    i += 1
     if(sys.argv[i] == '-h' or sys.argv[i] == '--help'):
         print('\ndecrypt [Option] \n\nOptions:')
         print('-h / --help        -> shows this')
@@ -45,11 +46,13 @@ def decrypt_file(name, path):
     global dir_list, file_counter
 
     file = open(path, 'r')
-    content = json.loads(file.read())
+    json_content = file.read()
+    content = json.loads(json_content)
     file.close()
 
     if(content["type"] == "directory"):
         dir_list.append([name, path])
+        return
     
     # decrypt content & save decrypted
     msg = decrypt(content["iv"], content["ciphertext"])
@@ -62,20 +65,23 @@ def decrypt_file(name, path):
     file.close()
     file_counter += 1
 
-    # encrypt filename
+    # decrypt filename
     try:
-        filename = decrypt(content["name_iv"], content["name_content"])
-
-        # subsitude name with random string
-        # 1. make sure it does only replace the name, not other dirs
-        reversed_path = "".join(reversed(path))
-        reversed_name = "".join(reversed(path))
-        reversed_new_name = "".join(reversed(filename))
-        new_reversed_path = reversed_path.replace(reversed_name, reversed_new_name, 1)
-        new_path = "".join(reversed(new_reversed_path))
-        os.rename(path, new_path)
+        print("hello")
+        filename = str(decrypt(content["name_iv"], content["name_ciphertext"]))
     except Exception:
         reason = "Filename wasnt encrypted."
+        print("hello2")
+        return
+    
+    # subsitude name with random string
+    # 1. make sure it does only replace the name, not other dirs
+    reversed_path = "".join(reversed(path))
+    reversed_name = "".join(reversed(name))
+    reversed_new_name = "".join(reversed(filename))
+    new_reversed_path = reversed_path.replace(reversed_name, reversed_new_name, 1)
+    new_path = "".join(reversed(new_reversed_path))
+    os.rename(path, new_path)
     
     return
 
@@ -83,7 +89,7 @@ def recursive_decryption(name, path):
     path = str(path) + str("/") + str(name)
     if(os.path.isfile(path)):
         decrypt_file(name, path)
-    if(os.path.isdir(path)):
+    elif(os.path.isdir(path)):
         for i in os.listdir(path):
             recursive_decryption(i, path)
     else:
@@ -97,7 +103,8 @@ def directory_decryption():
 
         dir_name_file = dir_list[i][0] + "/" + dir_list[i][1]         
         file = open(dir_name_file, 'r')
-        content = json.loads(file.read())
+        json_content = file.read()
+        content = json.loads(json_content)
         file.close()
         os.remove(dir_name_file)
 

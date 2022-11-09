@@ -14,7 +14,7 @@ from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
 
 
-global dir_list, file_counter, encrypt_dir_name, encrypt_file_name
+global dir_list, file_counter, dir_counter, encrypt_dir_name, encrypt_file_name
 # Options
 # Which File/Directory?
 Name = None
@@ -97,7 +97,7 @@ def encrypt_file(name, path):
 
     if(encrypt_file_name):
         file_name = encrypt(bytes(name.encode()))
-        result = json.dumps({'iv':content[0], 'ciphertext':content[1], 'NameIV':file_name[0], 'NameCiphertext':file_name[1], 'type':"file"})
+        result = json.dumps({'iv':content[0], 'ciphertext':content[1], 'name_iv':file_name[0], 'name_ciphertext':file_name[1], 'type':"file"})
     else:
         result = json.dumps({'iv':content[0], 'ciphertext':content[1], 'type':"file"})
 
@@ -137,7 +137,7 @@ def directory_encryption():
     # why not from 0 to len(...)
     # -> start with the deepest paths
     #    otherwise paths will change
-    for i in range(-(len(dir_list)), 0):
+    for i in range(-len(dir_list), 0):
         real_i = -i - 1
 
         print('Encrypting directorynames ... ' + "{}".format(real_i+1) + ' left')

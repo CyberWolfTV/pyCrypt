@@ -111,7 +111,7 @@ def encrypt_file(name, path):
         # 1. make sure it does only replace the name, not other dirs
         random_name = "".join(random.choice(string.ascii_letters) for x in range(20))
         reversed_path = "".join(reversed(path))
-        reversed_name = "".join(reversed(path))
+        reversed_name = "".join(reversed(name))
         new_reversed_path = reversed_path.replace(reversed_name, random_name, 1)
         new_path = "".join(reversed(new_reversed_path))
 

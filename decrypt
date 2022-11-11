@@ -10,6 +10,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
 
+# Input & global variables
 global dir_list, file_counter
 dir_list = []
 Name = None
@@ -38,6 +39,8 @@ if(Name == None):
 
 key = hashlib.sha256(input('Passwd: ').encode()).digest()
 
+
+# Functions
 def decrypt(iv, ciphertext):
     iv = b64decode(iv)
     ct = b64decode(ciphertext)
@@ -70,11 +73,9 @@ def decrypt_file(name, path):
 
     # decrypt filename
     try:
-        print("hello")
         filename = decrypt(content["name_iv"], content["name_ciphertext"]).decode("UTF-8")
     except Exception:
-        reason = "Filename wasnt encrypted."
-        print("hello2")
+        # reason = "Filename wasnt encrypted."
         return
     
     # subsitude name with random string
@@ -85,7 +86,6 @@ def decrypt_file(name, path):
     new_reversed_path = reversed_path.replace(reversed_name, reversed_new_name, 1)
     new_path = "".join(reversed(new_reversed_path))
     os.rename(path, new_path)
-    
     return
 
 def recursive_decryption(name, path):
@@ -124,11 +124,14 @@ def directory_decryption():
         new_reversed_path = new_reversed_path_1.replace(reversed_name, "".join(reversed(directory_name)), 1)
         new_path = "".join(reversed(new_reversed_path))
         os.rename("".join(reversed(new_reversed_path_1)), new_path)
-        
+
     return
+
+
 
 recursive_decryption(Name, os.getcwd())
 
+# if files with type "directory" were found
 if(len(dir_list) != 0):
     directory_decryption()
     dir_counter = len(dir_list)

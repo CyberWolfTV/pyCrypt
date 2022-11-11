@@ -4,28 +4,26 @@ import os
 import sys
 import json
 import hashlib
-import urllib.parse
 import random
 import string
 
 from base64 import b64encode
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
-from Crypto.Random import get_random_bytes
 
 
-global dir_list, file_counter, dir_counter, encrypt_dir_name, encrypt_file_name
+global dir_list, file_counter, encrypt_dir_name, encrypt_file_name
+
 # Options
-# Which File/Directory?
-Name = None
-# other options
-encrypt_dir_name = None
-encrypt_file_name = None
-no_questions = None
+Name = None                 # string              
+encrypt_dir_name = None     # boolean
+encrypt_file_name = None    # boolean
+no_questions = None         # boolean
 
-file_counter = 0
-dir_list = []
+file_counter = 0            # counts encrypted files
+dir_list = []               # creates a list with all dirs
 
+# filter for wrong input
 def ask(question, default):
     input1 = input(question)
     if(input1 == '' or input1 == None):
@@ -46,7 +44,7 @@ for i in range(0, len(sys.argv) - 1):
         print('DIRECTORY / FILENAME   -> encrypts this file/directory')
         print('-fn / --filenames      -> encrypts filenames too')
         print('-dn / --directorynames -> encrypts directorynames too')
-        print('-nq / --no-questions   -> does not ask any questions')
+        print('-nq / --no-questions   -> does not ask any questions (except passwd)')
 
         print('\nHow it works:')
         print('This script will hash ur passwd with sha256.')
@@ -65,8 +63,13 @@ for i in range(0, len(sys.argv) - 1):
     else:
         Name = sys.argv[i]
 
+# verify if specified Name is correct
+if(not os.path.isfile(Name) and not os.path.isfile(Name)):
+    Name == None
 if(Name == None):
     Name = input('File or Directory: ')
+
+# ask for options
 if(encrypt_file_name == None and no_questions == None):
     encrypt_file_name = ask('Encrypt filenames? [y/N] ', 'n')
 if(encrypt_dir_name == None and no_questions == None):

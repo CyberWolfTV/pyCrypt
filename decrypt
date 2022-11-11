@@ -109,11 +109,11 @@ def directory_decryption():
 
         print('Decrypting directorynames ... ' + "{}".format(real_i) + ' left')
                 
-        file = open(dir_list[i][1], 'r')
+        file = open(dir_list[real_i][1], 'r')
         json_content = file.read()
         content = json.loads(json_content)
         file.close()
-        os.remove(dir_list[i][1])
+        os.remove(dir_list[real_i][1])
 
         # subsitude name with random string
         # 1. make sure it does only replace the name, not other dirs

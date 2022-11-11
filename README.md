@@ -31,8 +31,3 @@ What does it do?
 2. Optional u can let it encrypt the filenames and/or the directorynames too.
 3. It can used in the terminal of ur linux computer.
 4. -h / --help shows what u can do and how it works. 
-
-Disclaimer: 
-1. The developer is not liable for any damage. 
-2. Dont run the script with root privileges.
-

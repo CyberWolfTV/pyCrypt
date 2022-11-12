@@ -170,6 +170,7 @@ def directory_encryption():
         os.rename(dir_list[real_i][1], new_path)
     return
 
+
 # call the encrypt functions
 recursive_encryption(Name, os.getcwd())
 
@@ -178,7 +179,6 @@ if(encrypt_dir_name):
     dir_counter = len(dir_list)
 else:
     dir_counter = 0
-
 
 # output some stats
 if(dir_counter == 0 and file_counter == 0):

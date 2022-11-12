@@ -128,7 +128,6 @@ def directory_decryption():
     return
 
 
-
 recursive_decryption(Name, os.getcwd())
 
 # if files with type "directory" were found

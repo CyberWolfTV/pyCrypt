@@ -26,12 +26,14 @@ decrypt -h
 ```
 -> shows help page
 
+***
 What does it do?
 1. It en-/decrypts single files or all files in a directory of ur choice.
 2. Optional u can let it encrypt the filenames and/or the directorynames too.
 3. It can used in the terminal of ur linux computer.
 4. -h / --help shows what u can do and how it works. 
 
+***
 If ur using the old version (in master branch till 11.11.22):
 1. Download the old version -> branch "Version_1"
 2. Decrypt all ur files

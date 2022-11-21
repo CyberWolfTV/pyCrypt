@@ -15,7 +15,7 @@ from Crypto.Util.Padding import pad
 global dir_list, file_counter, encrypt_dir_name, encrypt_file_name
 
 # Options
-Name = None                 # string              
+Name = ""                   # string              
 encrypt_dir_name = None     # boolean
 encrypt_file_name = None    # boolean
 no_questions = None         # boolean
@@ -65,8 +65,8 @@ for i in range(0, len(sys.argv) - 1):
 
 # verify if specified Name is correct
 if(not os.path.isfile(Name) and not os.path.isfile(Name)):
-    Name == None
-if(Name == None):
+    Name = ""
+if(Name == ""):
     Name = input('File or Directory: ')
 
 # ask for options

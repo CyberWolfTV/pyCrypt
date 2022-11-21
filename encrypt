@@ -64,7 +64,7 @@ for i in range(0, len(sys.argv) - 1):
         Name = sys.argv[i]
 
 # verify if specified Name is correct
-if(not os.path.isfile(Name) and not os.path.isfile(Name)):
+if(not os.path.isfile(Name) and not os.path.isdir(Name)):
     Name = ""
 if(Name == ""):
     Name = input('File or Directory: ')

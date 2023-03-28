@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.10
+#!/bin/python3
 
 import os
 import sys
@@ -10,146 +10,153 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
 
-# Input & global variables
-global dir_list, file_counter
-dir_list = []
-Name = None
-file_counter = 0
+def pycrypt_help():
+    print('\ndecrypt [Option] \n\nOptions:')
+    print('-h / --help        -> shows this')
+    print('DIRECTORY/FILENAME -> decrypts this file / directory')
+    print('The script will automatically detect whether the filename or')
+    print('the directory name is encrypted or not.')
 
-for i in range(0, len(sys.argv)-1):
-    i += 1
-    if(sys.argv[i] == '-h' or sys.argv[i] == '--help'):
-        print('\ndecrypt [Option] \n\nOptions:')
-        print('-h / --help        -> shows this')
-        print('DIRECTORY/FILENAME -> decrypts this file/directory')
-        print('The script will automaticly detect wether the filename is \nencrypted or not')
-        print('Same for the directorynames.')
-
-        print('\nHow it works:')
-        print('This script will hash ur passwd with sha256.')
-        print('Then it will decrypt ur file with AES256, CBC mode.')
-        print('The key will be the hashed passwd.')
-        print('The iv is stored, like the ciphertext, in json format \nin the file.')
-        print('U can use the file or the directory like u did before encrypting it.')
-        exit()
-    else:
-        Name = sys.argv[i]
-if(Name == None):
-    Name = input('File or Directory: ')
-
-key = hashlib.sha256(input('Passwd: ').encode()).digest()
+    print('\nHow it works:')
+    print('This script will hash ur passwd with sha256.')
+    print('Then it will decrypt ur file with AES256, CBC mode.')
+    print('The key will be the hashed passwd.')
+    print('The iv is stored, like the ciphertext, in json format')
+    print('in the file.')
+    print('U can use the file or the directory like u did before')
+    print('encrypting it.')
 
 
-# Functions
-def decrypt(iv, ciphertext):
+def get_name(name):
+    while True:
+        name = os.getcwd() + '/' + name
+        name = os.path.normpath(name)
+        if os.path.isfile(name) or os.path.isdir(name):
+            return name
+        if name in ('e', 'exit'):
+            print('e / exit means exit...')
+            sys.exit()
+        name = input('File or Directory: ')
+
+
+def list_dir_absolute_path(path):
+    paths = []
+    for i in os.listdir(path):
+        paths.append(path + '/' + i)
+    return paths
+
+
+def decrypt(ciphertext, key, iv):
     iv = b64decode(iv)
     ct = b64decode(ciphertext)
     cipher = AES.new(key, AES.MODE_CBC, iv)
     msg = unpad(cipher.decrypt(ct), AES.block_size)
     return msg
 
-def decrypt_file(name, path):
-    global dir_list, file_counter
 
-    file = open(path, 'r')
-    json_content = file.read()
-    content = json.loads(json_content)
-    file.close()
+def replace_name(path, new_name):
+    return path[0:path.rfind('/')+1] + new_name
 
-    if(content["type"] == "directory"):
-        dir_list.append([name, path])
-        return
-    
-    # decrypt content & save decrypted
-    msg = decrypt(content["iv"], content["ciphertext"])
+
+def decrypt_file(path, key):
     try:
-        file = open(path, 'w')
-        file.write(msg)
-    except Exception:
-        file = open(path, 'wb')
-        file.write(msg)
-    file.close()
-    file_counter += 1
+        with open(path, 'r') as file:
+            data = json.loads(file.read())
+    except (ValueError, UnicodeDecodeError):
+        print(path)
+        print('FILE WAS DAMAGED OR NOT ENCRYPTED WITH PYCRYPT')
+        return 2
 
-    # decrypt filename
-    try:
-        filename = decrypt(content["name_iv"], content["name_ciphertext"]).decode("UTF-8")
-    except Exception:
-        # reason = "Filename wasnt encrypted."
-        return
-    
-    # subsitude name with random string
-    # 1. make sure it does only replace the name, not other dirs
-    reversed_path = "".join(reversed(path))
-    reversed_name = "".join(reversed(name))
-    reversed_new_name = "".join(reversed(filename))
-    new_reversed_path = reversed_path.replace(reversed_name, reversed_new_name, 1)
-    new_path = "".join(reversed(new_reversed_path))
-    os.rename(path, new_path)
-    return
+    if data['type'] == 'directory':
+        return 1
 
-def recursive_decryption(name, path):
-    path = str(path) + str("/") + str(name)
-    if(os.path.isfile(path)):
-        decrypt_file(name, path)
-    elif(os.path.isdir(path)):
-        for i in os.listdir(path):
-            recursive_decryption(i, path)
+    msg = decrypt(data['ct'], key, data['iv'])
+    with open(path, 'wb') as file:
+        file.write(msg)
+
+    if 'name_ct' in data:
+        real_name = decrypt(data['name_ct'], key, data['name_iv'])
+        new_path = replace_name(path, real_name.decode('UTF-8'))
+        os.rename(path, new_path)
+
+
+def decrypt_directories(directory_name_files, key):
+    for path in directory_name_files:
+        with open(path, 'r') as file:
+            data = json.loads(file.read())
+        directory_name = decrypt(data['ct'], key, data['iv']).decode('UTF-8')
+
+        directory_path = path[0:path.rfind('/')]
+        real_directory_path = replace_name(directory_path, directory_name)
+
+        os.remove(path)
+        os.rename(directory_path, real_directory_path)
+
+
+def decrypt_all(path, key):
+    directory_name_files = []
+    file_counter = 0
+
+    path_stack = [path]
+    while path_stack:
+        path = path_stack.pop(-1)
+        if os.path.isfile(path):
+            status = decrypt_file(path, key)
+            if status == 0:
+                file_counter += 1
+            elif status == 1:
+                directory_name_files.append(path)
+            elif status == 2:
+                continue
+        elif os.path.isdir(path):
+            path_stack += list_dir_absolute_path(path)
+        else:
+            print("\nThis filetype is unsupported!")
+            print(path)
+
+    decrypt_directories(directory_name_files, key)
+    return {'files': file_counter, 'directories': len(directory_name_files)}
+
+
+def output_stats(stats):
+    dirs = stats['directories']
+    files = stats['files']
+    if dirs == 0 and files == 0:
+        print('\n0 files and 0 directories decrypted.')
+    elif dirs == 1 and files == 0:
+        print('\n1 directory is successfully decrypted')
+    elif dirs == 0 and files == 1:
+        print('\n1 file is successfully decrypted')
+    elif dirs == 1 and files == 1:
+        print('\n1 file and 1 directory are successfully decrypted')
+    elif dirs > 1 and files == 0:
+        print('\n', dirs, ' directories are successfully decrypted')
+    elif dirs == 0 and files > 1:
+        print('\n', files, ' files are successfully decrypted')
     else:
-        print("Error " + path)
-
-def directory_decryption():
-    for i in range(-len(dir_list), 0):
-        real_i = -i - 1
-        print(dir_list[real_i][1])
-        print(dir_list[real_i][0])
-
-    for i in range(-len(dir_list), 0):
-        real_i = -i - 1
-
-        print('Decrypting directorynames ... ' + "{}".format(real_i) + ' left')
-                
-        file = open(dir_list[real_i][1], 'r')
-        json_content = file.read()
-        content = json.loads(json_content)
-        file.close()
-        os.remove(dir_list[real_i][1])
-
-        # subsitude name with random string
-        # 1. make sure it does only replace the name, not other dirs
-        directory_name = "/" + decrypt(content["iv"], content["ciphertext"]).decode("UTF-8")
-        reversed_path = "".join(reversed(dir_list[real_i][1]))
-        reversed_name = "".join(reversed(("/" + dir_list[real_i][0])))
-        new_reversed_path_1 = reversed_path.replace(reversed_name, "", 1)
-        new_reversed_path = new_reversed_path_1.replace(reversed_name, "".join(reversed(directory_name)), 1)
-        new_path = "".join(reversed(new_reversed_path))
-        os.rename("".join(reversed(new_reversed_path_1)), new_path)
-
-    return
+        print('\n', files, ' files and')
+        print(dirs, ' directories are successfully decrypted')
 
 
-recursive_decryption(Name, os.getcwd())
+def main():
+    path = ''
+    sys.argv.pop(0)
+    for arg in sys.argv:
+        if arg in ('-h', '--help'):
+            pycrypt_help()
+            sys.exit()
+        else:
+            path = arg
+    path = get_name(path)
 
-# if files with type "directory" were found
-if(len(dir_list) != 0):
-    directory_decryption()
-    dir_counter = len(dir_list)
-else:
-    dir_counter = 0
+    print('U are going to encrypt: ' + path)
 
-# output some stats
-if(dir_counter == 0 and file_counter == 0):
-    print('\n0 files and directories decrypted.')
-    print('Are u sure the file / directory u tried to decrypt exists?')
-elif(dir_counter == 1 and file_counter == 0):
-    print('\n' '1 directory is successfully decrypted')
-elif(dir_counter == 0 and file_counter == 1):
-    print('\n' '1 file is successfully decrypted')
-elif(dir_counter == 1 and file_counter == 1):
-    print('\n' '1 file and 1 directory are successfully decrypted')
-elif(dir_counter > 1 and file_counter == 0):
-    print('\n' + "{}".format(dir_counter) +  ' directories are successfully decrypted')
-elif(dir_counter == 0 and file_counter > 1):
-    print('\n' + "{}".format(file_counter) + ' files are successfully decrypted')
-else:
-    print('\n' + "{}".format(file_counter) + ' files and ' + "{}".format(dir_counter) +  ' directories are successfully decrypted')
+    key = hashlib.sha256(input('Passwd: ').encode()).digest()
+
+    stats = decrypt_all(path, key)
+
+    output_stats(stats)
+
+
+if __name__ == '__main__':
+    main()

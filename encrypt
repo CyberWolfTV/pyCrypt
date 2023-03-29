@@ -122,6 +122,7 @@ def encrypt_directory(path, key):
         file.write(json.dumps(encrypted_name))
 
     os.rename(path, new_path)
+    return new_path
 
 
 def encrypt_directories(path, key):
@@ -130,30 +131,33 @@ def encrypt_directories(path, key):
     while path_stack:
         path = path_stack.pop(-1)
         if os.path.isdir(path):
-            path_stack += list_dir_absolute_path(path)
             directory_counter += 1
-            encrypt_directory(path, key)
+            path = encrypt_directory(path, key)
+            path_stack += list_dir_absolute_path(path)
     return directory_counter
 
 
 def output_stats(stats):
     dirs = stats['directories']
     files = stats['files']
+    print()
     if dirs == 0 and files == 0:
-        print('\n0 files and 0 directories encrypted.')
+        print('0 files and 0 directories encrypted.')
     elif dirs == 1 and files == 0:
-        print('\n1 directory is successfully encrypted')
+        print('1 directory is successfully encrypted')
     elif dirs == 0 and files == 1:
-        print('\n1 file is successfully encrypted')
+        print('1 file is successfully encrypted')
     elif dirs == 1 and files == 1:
-        print('\n1 file and 1 directory are successfully encrypted')
+        print('1 file and 1 directory are successfully encrypted')
     elif dirs > 1 and files == 0:
-        print('\n', dirs, ' directories are successfully encrypted')
+        print(dirs, 'directories are successfully encrypted')
     elif dirs == 0 and files > 1:
-        print('\n', files, ' files are successfully encrypted')
+        print(files, 'files are successfully encrypted')
+    elif dirs == 1 and files > 1:
+        print('1 directory and', files, 'files are successfully encrypted')
     else:
-        print('\n', files, ' files and')
-        print(dirs, ' directories are successfully encrypted')
+        print(files, 'files and')
+        print(dirs, 'directories are successfully encrypted')
 
 
 def main():

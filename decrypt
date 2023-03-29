@@ -78,10 +78,11 @@ def decrypt_file(path, key):
         real_name = decrypt(data['name_ct'], key, data['name_iv'])
         new_path = replace_name(path, real_name.decode('UTF-8'))
         os.rename(path, new_path)
+    return 0
 
 
 def decrypt_directories(directory_name_files, key):
-    for path in directory_name_files:
+    for path in reversed(directory_name_files):
         with open(path, 'r') as file:
             data = json.loads(file.read())
         directory_name = decrypt(data['ct'], key, data['iv']).decode('UTF-8')
@@ -121,21 +122,24 @@ def decrypt_all(path, key):
 def output_stats(stats):
     dirs = stats['directories']
     files = stats['files']
+    print()
     if dirs == 0 and files == 0:
-        print('\n0 files and 0 directories decrypted.')
+        print('0 files and 0 directories decrypted.')
     elif dirs == 1 and files == 0:
-        print('\n1 directory is successfully decrypted')
+        print('1 directory is successfully decrypted')
     elif dirs == 0 and files == 1:
-        print('\n1 file is successfully decrypted')
+        print('1 file is successfully decrypted')
     elif dirs == 1 and files == 1:
-        print('\n1 file and 1 directory are successfully decrypted')
+        print('1 file and 1 directory are successfully decrypted')
     elif dirs > 1 and files == 0:
-        print('\n', dirs, ' directories are successfully decrypted')
+        print(dirs, 'directories are successfully decrypted')
     elif dirs == 0 and files > 1:
-        print('\n', files, ' files are successfully decrypted')
+        print(files, 'files are successfully decrypted')
+    elif dirs == 1 and files > 1:
+        print('1 directory and', files, 'files are successfully decrypted')
     else:
-        print('\n', files, ' files and')
-        print(dirs, ' directories are successfully decrypted')
+        print(files, 'files and')
+        print(dirs, 'directories are successfully decrypted')
 
 
 def main():
@@ -149,7 +153,7 @@ def main():
             path = arg
     path = get_name(path)
 
-    print('U are going to encrypt: ' + path)
+    print('U are going to decrypt: ' + path)
 
     key = hashlib.sha256(input('Passwd: ').encode()).digest()
 

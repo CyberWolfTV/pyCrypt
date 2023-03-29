@@ -31,9 +31,17 @@ decrypt -h
 ***
 What does it do?
 1. It encrypts and decrypts single files or all files in a directory of ur choice.
-2. Optional u can let it encrypt the filenames and/or the directory names too.
+2. Optional u can let it encrypt the filenames and / or the directory names too.
 3. It can be used in the terminal of ur linux computer.
 4. -h / --help shows what u can do and how it works.
+
+***
+Advantages:
+1. It's pretty stable, u can decrypt a directory which contains:
+   - unencrypted files / directories
+   - files / directories with encrypted and unencrypted names
+2. It does encrypt everything file by file so u can just decrypt one file in ur encrypted directory.
+3. Same works the other way, u can add an encrypted file to ur already encrypted directory without having to decrypt and re-encrypt the whole directory.
 
 ***
 If ur using the old version (in master branch till 29.03.2023):

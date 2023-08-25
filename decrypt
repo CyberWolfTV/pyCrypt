@@ -6,8 +6,13 @@ import json
 import hashlib
 
 from base64 import b64decode
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
+
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import unpad
+except ModuleNotFoundError:
+    from Cryptodome.Cipher import AES
+    from Cryptodome.Util.Padding import unpad
 
 
 def pycrypt_help():
